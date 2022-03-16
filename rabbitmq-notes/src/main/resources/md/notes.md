@@ -94,3 +94,19 @@ docker rm 容器id
 - 发布订阅 (publish/subscribe)
 - 路由 (routing)
 - 主题 (topic)
+
+
+
+exchanger 交换机
+
+- direct：可以使用 routing key
+- fanout：直接发送
+- headers
+- topic：# 0或多级，*一级
+
+
+
+轮询分发 (work，均分)
+
+公平分发，必须手动应答 (响应快消费的多)
+
