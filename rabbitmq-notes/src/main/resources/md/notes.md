@@ -110,3 +110,13 @@ exchanger 交换机
 
 公平分发，必须手动应答 (响应快消费的多)
 
+
+
+
+
+SpringBoot 整合
+
+查看状态
+
+systemctl status rabbitmq-server
+
