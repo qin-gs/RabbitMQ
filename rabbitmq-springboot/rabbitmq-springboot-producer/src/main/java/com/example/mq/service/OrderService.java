@@ -85,13 +85,10 @@ public class OrderService {
         String routingKey = "ttl.message";
 
         // 设置消息过期时间
-        MessagePostProcessor processor = new MessagePostProcessor() {
-            @Override
-            public Message postProcessMessage(Message message) throws AmqpException {
-                message.getMessageProperties().setExpiration("50000");
-                message.getMessageProperties().setContentEncoding("utf-8");
-                return message;
-            }
+        MessagePostProcessor processor = message -> {
+            message.getMessageProperties().setExpiration("5000");
+            message.getMessageProperties().setContentEncoding("utf-8");
+            return message;
         };
 
         rabbitTemplate.convertAndSend(exchangeName, routingKey, orderId, processor);

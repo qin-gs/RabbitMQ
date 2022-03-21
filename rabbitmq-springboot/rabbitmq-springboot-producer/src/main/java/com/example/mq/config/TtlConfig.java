@@ -7,7 +7,6 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
 import java.util.Map;
 
 @Configuration
@@ -20,7 +19,11 @@ public class TtlConfig {
 
     @Bean
     public Queue directTtlQueue() {
-        Map<String, Object> arguments = Collections.singletonMap("x-message-ttl", 5000);
+        // 给队列中的消息设置过期时间
+        // 将过期消息通过 死信交换机 放入 死信队列，让 死信消费者 处理
+        Map<String, Object> arguments = Map.of("x-message-ttl", 5000,
+                "x-dead-letter-exchange", "dead_letter_direct_exchange",
+                "x-dead-letter-routing-key", "dead"); // 如果是 fanout 模式不需要 key
         return new Queue("ttl.direct.queue", true, false, false, arguments);
     }
 
