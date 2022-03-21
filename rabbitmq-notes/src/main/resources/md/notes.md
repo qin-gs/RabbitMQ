@@ -114,9 +114,20 @@ exchanger 交换机
 
 
 
-SpringBoot 整合
+### SpringBoot 整合
 
 查看状态
 
 systemctl status rabbitmq-server
 
+
+
+
+
+### 过期时间 TTL
+
+- 给队列设置过期时间 (给放到队列中的所有消息设置过期时间，过期后放入**死信队列**)
+
+- 给消息设置过期时间 (给特定消息设置过期时间，过期后直接**移除**)
+
+同时设置，以值小的为准

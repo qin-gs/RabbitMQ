@@ -26,4 +26,14 @@ class OrderServiceTest {
         service.makeOrderTopic("1", "2", 3);
 
     }
+
+    @Test
+    void makeOrderDirectTtlQueue() {
+        service.makeOrderDirectTtlQueue("1", "2", 3);
+    }
+
+    @Test
+    void makeOrderDirectTtlMessage() {
+        service.makeOrderDirectTtlMessage("1", "2", 3);
+    }
 }
