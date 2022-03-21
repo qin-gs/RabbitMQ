@@ -20,4 +20,10 @@ class OrderServiceTest {
         service.makeOrderDirect("1", "2", 3);
 
     }
+
+    @Test
+    void makeOrderTopic() {
+        service.makeOrderTopic("1", "2", 3);
+
+    }
 }

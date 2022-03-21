@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 /**
  * 绑定队列
  */
-@Service("smsConsumer")
+@Service("fanoutSmsConsumer")
 @RabbitListener(queues = {"sms.fanout.queue"})
 public class SmsConsumer {
 

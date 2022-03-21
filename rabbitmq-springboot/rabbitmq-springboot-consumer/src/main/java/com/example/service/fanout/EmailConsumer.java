@@ -4,7 +4,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
-@Service("emailConsumer")
+@Service("fanoutEmailConsumer")
 @RabbitListener(queues = {"email.fanout.queue"})
 public class EmailConsumer {
 
