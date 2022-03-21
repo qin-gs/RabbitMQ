@@ -25,5 +25,6 @@ public class OrderService {
         String exchangeName = "fanout_order_exchange";
         String routingKey = "";
         rabbitTemplate.convertAndSend(exchangeName, routingKey, orderId);
+        System.out.println("订单生成成功: " + orderId);
     }
 }

@@ -15,26 +15,41 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class Config {
 
+    /**
+     * 声明 fanout 交换机
+     */
     @Bean
     public FanoutExchange fanoutExchange() {
         return new FanoutExchange("fanout_order_exchange", true, false);
     }
 
+    /**
+     * 声明队列
+     */
     @Bean
     public Queue smsQueue() {
         return new Queue("sms.fanout.queue", true);
     }
 
+    /**
+     * 声明队列
+     */
     @Bean
     public Queue emsQueue() {
         return new Queue("ems.fanout.queue", true);
     }
 
+    /**
+     * 声明队列
+     */
     @Bean
     public Queue emailQueue() {
         return new Queue("email.fanout.queue", true);
     }
 
+    /**
+     * 绑定 队列 和 交换机
+     */
     @Bean
     public Binding smsBinding() {
         return BindingBuilder.bind(smsQueue()).to(fanoutExchange());
