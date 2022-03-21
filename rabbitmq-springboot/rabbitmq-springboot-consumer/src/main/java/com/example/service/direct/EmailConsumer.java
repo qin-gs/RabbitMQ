@@ -1,15 +1,16 @@
-package com.example.service.fanout;
+package com.example.service.direct;
 
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-@Service("emailConsumer")
-@RabbitListener(queues = {"email.fanout.queue"})
+@Service("directEmailConsumer")
+@RabbitListener(queues = {"email.direct.queue"})
 public class EmailConsumer {
 
     @RabbitHandler
     public void receiveMessage(String message) {
-        System.out.println("email fanout get: " + message);
+        System.out.println("email direct get: " + message);
     }
 }

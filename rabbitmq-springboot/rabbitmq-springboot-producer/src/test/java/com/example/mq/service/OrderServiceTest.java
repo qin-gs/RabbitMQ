@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
 class OrderServiceTest {
 
@@ -13,7 +11,13 @@ class OrderServiceTest {
     private OrderService service;
 
     @Test
-    void makeOrder() {
-        service.makeOrder("1", "2", 3);
+    void makeOrderFanout() {
+        service.makeOrderFanout("1", "2", 3);
+    }
+
+    @Test
+    void makeOrderDirect() {
+        service.makeOrderDirect("1", "2", 3);
+
     }
 }

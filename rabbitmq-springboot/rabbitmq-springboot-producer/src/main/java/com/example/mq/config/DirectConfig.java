@@ -2,25 +2,20 @@ package com.example.mq.config;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * 1. 注册交换机
- * 2. 声明队列
- * 3. 绑定
- */
 @Configuration
-public class Config {
+public class DirectConfig {
 
     /**
-     * 声明 fanout 交换机
+     * 声明 direct 交换机
      */
     @Bean
-    public FanoutExchange fanoutExchange() {
-        return new FanoutExchange("fanout_order_exchange", true, false);
+    public DirectExchange directExchange() {
+        return new DirectExchange("direct_order_exchange", true, false);
     }
 
     /**
@@ -28,7 +23,7 @@ public class Config {
      */
     @Bean
     public Queue smsQueue() {
-        return new Queue("sms.fanout.queue", true);
+        return new Queue("sms.direct.queue", true);
     }
 
     /**
@@ -36,7 +31,7 @@ public class Config {
      */
     @Bean
     public Queue emsQueue() {
-        return new Queue("ems.fanout.queue", true);
+        return new Queue("ems.direct.queue", true);
     }
 
     /**
@@ -44,7 +39,7 @@ public class Config {
      */
     @Bean
     public Queue emailQueue() {
-        return new Queue("email.fanout.queue", true);
+        return new Queue("email.direct.queue", true);
     }
 
     /**
@@ -52,16 +47,16 @@ public class Config {
      */
     @Bean
     public Binding smsBinding() {
-        return BindingBuilder.bind(smsQueue()).to(fanoutExchange());
+        return BindingBuilder.bind(smsQueue()).to(directExchange()).with("sms");
     }
 
     @Bean
     public Binding emsBinding() {
-        return BindingBuilder.bind(emsQueue()).to(fanoutExchange());
+        return BindingBuilder.bind(emsQueue()).to(directExchange()).with("ems");
     }
 
     @Bean
     public Binding emailBinding() {
-        return BindingBuilder.bind(emailQueue()).to(fanoutExchange());
+        return BindingBuilder.bind(emailQueue()).to(directExchange()).with("email");
     }
 }
