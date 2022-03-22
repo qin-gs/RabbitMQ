@@ -61,7 +61,7 @@ docker rm 容器id
 
   包含 management 所有权限
 
-  查看创建删除自己的 virtural hosts 所属的 policies 和 parameters 信息
+  查看创建删除自己的 virtual hosts 所属的 policies 和 parameters 信息
 
 - monitoring
 

@@ -215,29 +215,238 @@ Connection conn = factory.newConnection();
 // 或设置uri
 factory.setUri("amqp://userName:password@ipAddress:port/virtualHost");
 
-// Connection可以创建多个Channel， 但不能在线程间共享，应该为每个线程开辟一个 C
+// Connection可以创建多个Channel， 但不能在线程间共享，应该为每个线程开辟一个 Channel
 ```
 
 
 #### 使用交换器和队列
 
-使用前要先声明 Declare
+使用前要先声明 declare
 ```java
 // 声明一个交换器
 channel.exchangeDeclare(exchangeName, "direct", true);
-// 生命一个队列
+// 声明一个队列
+// 该队列，对当前应用中同一个 Connection 层面可用，同一个 Connection 的不同 Channel 可共用，会在应用连接断开时自动删除
 String queueName = channel.queueDeclare().getQueue();
 // 绑定 队列 和 交换器
-channel.queueBind(queueName, exchangeName, routingKey)
+channel.queueBind(queueName, exchangeName, routingKey);
+```
+
+
+
+声明交换机
+
+```java
+// 声明交换机的参数，返回一个 Ok 命令
+Exchange.DeclareOk exchangeDeclare(
+    String exchange, // 交换机名称
+    BuiltinExchangeType type, // 交换机类型 fanout, direct, topic
+    boolean durable, // 是否持久化
+    boolean autoDelete, // 是否自动删除 (自动删除的前提是至少有一个队列或者交换器与这个交换器绑定， 之后所有与这个交换器绑定的队列或者交换器都与此解绑)
+    boolean internal, // 是否是内置的 (如果是 true，客户端程序无法直接向这个交换机发送消息，只能通过交换机路由到交换机的方式)
+    Map<String, Object> arguments // 一些结构化参数
+) throws IOException;
+
+// 这样声明交换机不需要客户端返回(一般不使用)
+void exchangeDeclareNoWait(String exchange,
+    BuiltinExchangeType type,
+    boolean durable,
+    boolean autoDelete,
+    boolean internal,
+    Map<String, Object> arguments) throws IOException;
+
+// 检测交换机是否被使用
+Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException;
+
+
+// 删除交换机
+Exchange.DeleteOk exchangeDelete(
+    String exchange, // 交换机名称
+    boolean ifUnused // 设置是否在交换器没有被使用的情况下删除 (如果 isUnused 设置为 true ，则只有在此交换器没有被使用的情况下才会被删除：如果设置 false ，则无论如何这个交换器都要被删除)
+) throws IOException;
+```
+
+
+
+声明队列
+
+```java
+// 声明队列
+Queue.DeclareOk queueDeclare(
+    String queue, // 队列名称
+    boolean durable, // 是否持久化
+    boolean exclusive, //是否排他 (排他队列基于连接可见；：即使该队列是持久化的，一旦连接关闭或者客户端退出，该排他队列都会被自动删除，这种队列适用于一个客户端同时发送和读取消息的应用场景。)
+    boolean autoDelete, // 是否自动删除 (至少有一个消费者连接到这个队列，之后所有与这个队列连接的消费者都断开时，才会自动删除；为生产者客户端创建这个队列，或者没有消费者客户端与这个队列连接时，都不会自动删除这个队列。)
+    Map<String, Object> arguments // 一些参数
+) throws IOException;
+
+
+// 声明队列不需要客户端返回
+// 检测队列是否存在
+// 删除队列
+
+// 清空队列消息
+Queue.PurgeOk queuePurge(String queue) throws IOException;
+```
+
+
+
+绑定/解绑 交换机 和 队列
+
+```java
+Queue.BindOk queueBind(
+    String queue, // 队列名称
+    String exchange, // 交换机名称
+    String routingKey, // 绑定队列 和 交换机 的路由键
+    Map<String, Object> arguments // 一些参数
+) throws IOException;
+
+Queue.UnbindOk queueUnbind(
+    String queue, 
+    String exchange, 
+    String routingKey, 
+    Map<String, Object> arguments 
+) throws IOException;
+```
+
+
+
+绑定/解绑 交换机 和 交换机
+
+```java
+// 绑定后消息从 source 交换机转发到 des
+Exchange.BindOk exchangeBind(
+    String destination, 
+    String source, 
+    String routingKey, 
+    Map<String, Object> arguments
+) throws IOException;
 ```
 
 
 
 
 
+#### 发送消息
+
+```java
+// 发送消息
+void basicPublish(
+    String exchange, // 交换器名称
+    String routingKey, // 路由键
+    boolean mandatory, // 
+    boolean immediate, // 
+    BasicProperties props, // 消息属性集合
+    byte[] body // 消息体
+) throws IOException;
+
+// 消息属性集合 14 个
+// contentType, contentEncoding, Headers, deliverMode, priority
+// correlationId, replyTo, expiration, messageId, timestamp
+// type, userId, appId, clusterId
+```
 
 
 
+#### 消费消息
+
+- 推 push
+
+  通过持续订阅的方式消费消息
+
+  ```java
+  String basicConsume(
+      String queue, // 队列名称
+      boolean autoAck, // 是否自动确认
+      String consumerTag, // 消费者标签 (用来区分消费者)
+      boolean noLocal, // 设为 true：不能将同一个 Connection 中生产者发送的消息传送给这个 Connection 中的消费者
+      boolean exclusive, // 是否排他
+      Map<String, Object> arguments, // 设置消费者的参数
+      Consumer callback // 消费者的回调函数 (处理 mq 推送过来的消息)
+  ) throws IOException;
+  ```
+
+  消费者客户端需要考虑线程安全问题
+
+
+
+- 拉 pull
+
+  接收 mq 推送的消息
+
+  ```java
+  GetResponse basicGet(
+      String queue, // 队列名称
+      boolean autoAck // 是否自动确认
+  ) throws IOException;
+  ```
+
+
+
+#### 消费端的确认 和 拒绝
+
+保证消息从队列可靠的到达消费者
+
+ack 参数
+
+- false：等待投递的消息 + 已经投递尚未收到确认
+
+  如果消息此消息的消费者已经**断开连接**，rabbitMq 会安排重新进入队列，等待投递给下一个消费者
+
+
+
+拒绝消息
+
+```java
+// 一次拒绝一条消息
+void basicReject(
+    long deliveryTag, // 消息编号
+    boolean requeue // 是否重新存入队列发送给下一个消费者
+) throws IOException;
+
+// 批量拒绝
+void basicNack(
+    long deliveryTag, 
+    boolean multiple, // false: 拒绝一条消息；true: 拒绝该编号之前的所有消息
+    boolean requeue
+) throws IOException;
+
+// 请求 rabbitMq 重新发送还未被确认的消息
+// requeue：true 未确认的消息重新加入到队列，可能会发送给不同的消费者
+//          fakse 发送给之前相同的消费者
+Basic.RecoverOk basicRecover(boolean requeue) throws IOException;
+```
+
+
+
+#### 关闭连接
+
+```java
+// Connection 或 Channel 状态转变为 Close 时会调用 ShutdownListener 的方法
+channel.addShutdownListener(new ShutdownListener() {
+	@Override
+	public void shutdownCompleted(ShutdownSignalException cause) {
+		// 分析关闭原因
+	}
+});
+```
+
+
+
+### 4. 进阶
+
+
+
+#### 消息何去何从
+
+- mandatory
+
+  交换机无法根据自身的类型 和 路由键 找到符合条件的队列时
+
+  - true：rabbitMq 调用 Basic.Return 将消息返回给生产者
+  - false：直接丢弃
+
+- immediate
 
 
 
