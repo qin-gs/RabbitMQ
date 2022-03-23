@@ -446,7 +446,33 @@ channel.addShutdownListener(new ShutdownListener() {
   - true：rabbitMq 调用 Basic.Return 将消息返回给生产者
   - false：直接丢弃
 
-- immediate
+- ~~immediate~~
+
+  - true：如果交换机将消息路由到队列中，发现队列时不存在任何消费者，该消息不会被存入队列；当与路由键匹配的所有队列都没有消费者是，返回值生产者
+
+
+
+备份交换机 (alternate exchange)
+
+存储没有发出去的消息
+
+
+
+#### 过期时间 TTL(time to live)
+
+两种设置方式 (同时设置则以小的为准)
+
+- 消息的过期时间
+
+  设置队列属性 `x-message-ttl`，队列中的所有消息都有相同过期时间
+
+  单独设置消息的过期时间 (ttl=0，除非可以直接投递到消费者，否则立即丢弃)
+
+
+
+- 队列的过期时间
+
+  设置队列属性 `x-expires`，控制队列被自动删除前处于未使用状态的数键
 
 
 
