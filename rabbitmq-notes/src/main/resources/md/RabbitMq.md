@@ -472,9 +472,60 @@ channel.addShutdownListener(new ShutdownListener() {
 
 - 队列的过期时间
 
-  设置队列属性 `x-expires`，控制队列被自动删除前处于未使用状态的数键
+  设置队列属性 `x-expires`，控制队列被自动删除前处于未使用状态 (队列上没有消费者，队列没有被重新声明，在过期时间段内未调用过 Basic.Get 命令) 的时间
 
 
 
+#### 死信队列 DLX (dead letter exchange)
+
+消息变成死信的情况：
+
+- 消息被拒绝，并且 requeue = false
+- 消息过期
+- 队列达到最大长度
+
+```java
+@Test
+void ttlDlxTest(Channel channel) throws IOException {
+	// 创建两个交换机
+	channel.exchangeDeclare("exchange.dlx", DIRECT, true);
+	channel.exchangeDeclare("exchange.normal", FANOUT, true);
+	Map<String, Object> args = Map.of("x-message-ttl", 10000,
+			"x-dead-letter-exchange", "exchange.dlx",
+			"x-dead-letter-routing-key", "routingKey");
+	// 将两个交换机绑定到队列
+	channel.queueDeclare("queue.normal", true, false, false, args);
+	channel.queueBind("queue.normal", "exchange.normal", "routingKey");
+	channel.queueDeclare("queue.dlx", true, false, false, null);
+	channel.queueBind("queue.dlx", "exchange.dlx", "routingKey");
+	// 发送条消息，由于 routingKey = 'rk'，消息路由到 queue.normal 中，如果 10s 内没有被消费就会被判定为过期
+	// 过期之后，将消息转发给交换机 exchange.dlx，路由到 queue.dlx 死信队列中
+	channel.basicPublish("exchange.normal", "rk", 
+			MessageProperties.PERSISTENT_TEXT_PLAIN, "message".getBytes(StandardCharsets.UTF_8));
+}
+```
 
 
+
+#### 延迟队列
+
+消息发送出去后，等待特定时间，消费者才能进行消费
+
+- 下单后指定时间内未支付成功
+- 定时任务
+
+ttl + dlx，指定过期时间，然后从消费死信队列中的消息
+
+
+
+#### 优先级队列
+
+声明队列时配置参数  `x-max-priority`
+
+发送消息时，指定消息的优先级；优先级高的消息会被先消费
+
+
+
+#### RPC 实现
+
+客户端发送请求消息 (为了接收消息，需要在请求时携带一个回调队列 和 标志该请求的id)，服务端回复响应消息
