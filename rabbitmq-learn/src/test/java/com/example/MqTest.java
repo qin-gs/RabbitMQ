@@ -1,13 +1,6 @@
 package com.example;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.Method;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -37,6 +30,7 @@ public class MqTest {
                 });
 
     }
+
     @Test
     void consumerPull(Channel channel) throws IOException {
         GetResponse response = channel.basicGet("queueName", false);

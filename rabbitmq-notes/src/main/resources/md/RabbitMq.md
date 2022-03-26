@@ -528,4 +528,110 @@ ttl + dlx，指定过期时间，然后从消费死信队列中的消息
 
 #### RPC 实现
 
-客户端发送请求消息 (为了接收消息，需要在请求时携带一个回调队列 和 标志该请求的id)，服务端回复响应消息
+客户端发送请求消息 (为了接收消息，需要在请求时携带一个回调队列 和 收到响应消息后匹配到响应请求的id)，服务端回复响应消息
+
+```java
+// 客户端配置两个参数：回调队列标记 和 请求 id
+AMQP.BasicProperties properties = new AMQP.BasicProperties().builder()
+        .correlationId(corrId)
+        .replyTo(requestQueueName)
+        .build();
+```
+
+
+
+#### 持久化
+
+- 交换机持久化
+
+  保证交换机元数据不会丢失，声明交换机时`durable`
+
+- 队列持久化
+
+  保证队列元数据不会丢失，不保证消息，声明队列时 `durable`
+
+- 消息持久化
+
+  保证消息不会丢失 (如果只配置消息持久化，重启后队列丢失也会导致消息丢失，**单独设置没有意义**)
+
+  投递消息时 `BasicProperties.deliveryMode = 2 或 MessageProperties.PERSISTENT_TEXT_PLAIN`
+
+
+
+#### 生产者确认
+
+- 事务机制
+
+  - channel.txSelect：       将当前信道设置为事务模式
+  - channel.txCommit：   提交事务
+  - channel.txRollback：  回滚事务
+
+  ```java
+  try {
+      channel.txSelect();
+      for (int i = 0; i < 10; i++) {
+          channel.basicPublish("exchangeName",
+                  "routingKey",
+                  MessageProperties.PERSISTENT_TEXT_PLAIN,
+                  "message".getBytes(StandardCharsets.UTF_8));
+      }
+      channel.txCommit();
+  } catch (IOException e) {
+      channel.txRollback();
+      e.printStackTrace();
+  }
+  ```
+
+  
+
+- 发送方确认机制
+
+  - 一次确认一条
+  - 批量确认
+  - 异步确认
+
+  将信道设置为 确认 模式，该信道上发布的消息都会被指派一个唯一的 id，如果消息被投递到匹配的队列中，rabbitmq 会发生一个确认(Basic.Ack)给生产者(包含消息的唯一 id)
+
+  如果消息和队列时可持久化的，确认消息会在消息写入磁盘后发出；回传给生产者的确认消息 `deliverTag` 包含确认消息的序号，`multiple` 参数表示该序号之前的消息都已处理
+
+  如果因为 rabbitmq 自身内部原因导致消息丢失，会发生一条 `Basic.nack` 命令
+
+  ```java
+  try {
+      // 将信道设置为 确认 模式
+      channel.confirmSelect();
+      for (int i = 0; i < 10; i++) {
+          channel.basicPublish(
+                  "exchangeName",
+                  "routingKey",
+                  null,
+                  "message".getBytes(StandardCharsets.UTF_8));
+          if (!channel.waitForConfirms()) {
+              System.err.println("send message failed");
+          }
+      }
+  } catch (IOException | InterruptedException e) {
+      e.printStackTrace();
+  }
+  ```
+
+  
+
+#### 消费端介绍
+
+拒绝消息
+
+- Channel.basicNack
+- Channel.basicReject
+
+
+
+- 消息分发
+
+  默认分发消息采用 **轮询** 的方式
+
+  channel.basicQos 限制信道上的消费者所能保持的最大未确认消息的数量 (队列中的数量达到指定值就不会向这个消费者发送消息了)
+
+- 消息顺序性
+
+- 弃用 QueuingConsumer

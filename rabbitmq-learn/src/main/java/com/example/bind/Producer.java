@@ -6,7 +6,6 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 
 /**
