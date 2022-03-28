@@ -630,8 +630,108 @@ AMQP.BasicProperties properties = new AMQP.BasicProperties().builder()
 
   默认分发消息采用 **轮询** 的方式
 
-  channel.basicQos 限制信道上的消费者所能保持的最大未确认消息的数量 (队列中的数量达到指定值就不会向这个消费者发送消息了)
+  `channel.basicQos` 限制信道上的消费者所能保持的最大未确认消息的数量 (队列中的数量达到指定值就不会向这个消费者发送消息了)，只适用于 **推** 模式
+
+  ```java
+  // global
+  // true：信道上所有的消费者都要遵从 prefetchCount 的限制
+  // false：信道上新的消费者要遵从 prefetchCount 的限制
+  void basicQos(int prefetchCount, boolean global) throws IOException;
+  void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException;
+  ```
+
+
 
 - 消息顺序性
+  - 事务回滚，需要补偿发送
+  - 消息确认情况下发生 超时，中断，Nack，需要补偿发送
+  - 消息设置不同的超时时间，消费死信队列时的顺序发发送顺序不一致
+  - 消息设置优先级
 
-- 弃用 QueuingConsumer
+
+
+- 弃用 QueuingConsumer，使用扩展 DefaultConsumer 的方式
+
+
+
+#### 消息传输保障
+
+- 最多一次：at most once，消息可能会丢失，不会重复传输
+- 最少一次：at least once，消息不会丢失，可能重复传输
+  - 需要开启事务 或 消息确认，来保证可靠的传输
+  - 生产者需要使用 mandatory 参数 或 备份交换机确保消息能从交换机路由到队列然后保存下来不会丢失
+  - 消息 和 队列都要持久化
+  - 消费者在消费消息时需要将 autoAck 设为 false，通过手动确认来保证消息被正确消费
+- 恰好一次(不支持)：exactly once，每条消息肯定 且 仅 传输一次
+
+
+
+
+
+### 5. Rabbitmq 管理
+
+
+
+#### 多租户与权限
+
+虚拟主机 (virtual host)
+
+```shell
+# 语法 [可选参数] {必选参数}
+rabbitmqctl [-n node] [-t timeout] {-q} {command} {command options}
+```
+
+```shell
+# 创建/删除 vhost
+rabbitmqctl add_vhost/delete_vhost vhost1
+# 列出当前 vhost
+rabbitmqctl list_vhosts name/tracing # 名称/是否使用 trace 功能
+```
+
+权限控制以 vhost 为单位，用户只能访问指定 vhost 内的队列，交换机等
+
+```shell
+# 配置权限
+# -p，vhost 名称，用户名，匹配用户在哪些资源上拥有可配置权限，写权限(发布消息)，读权限(读取消息，清空队列) (后三个都是正则表达式)
+rabbitmqctl set_permissions -p / username ".*" ".*" ".*"
+# 清除权限
+rabbitmqctl clear_permissions -p / username
+# 列出权限
+rabbitmqctl list_permissions -p /
+```
+
+
+
+#### 用户管理
+
+```shell
+rabbitmqctl add_user username password            # 添加用户
+rabbitmqctl delete_user username                  # 删除用户
+rabbitmqctl change_password username newPassword  # 修改密码
+rabbitmqctl clear_password                        # 清除密码
+rabbitmqctl authenticate_user username password   # 认证用户
+rabbitmqctl list_users                            # 列出用户 和 角色(none, management, policymaker, monitoring, administrator)
+rabbitmqctl set_user_tags username                # 设置角色
+```
+
+
+
+#### web 端管理
+
+```shell
+rabbitmq-plugins enable/disable rabbitmq-management  # 开启/关闭插件
+rabbitmq-plugins list                                # 列出当前插件
+```
+
+
+
+#### 应用与集群管理
+
+```shell
+rabbitmqctl stop/shutdown/stop_app/start_app/wait/reset/force_reset/rotate_logs/hipe_compile
+```
+
+```shell
+rabbitmqctl join_cluster/cluster_status/force_boot/s
+```
+
