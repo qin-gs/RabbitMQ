@@ -735,3 +735,38 @@ rabbitmqctl stop/shutdown/stop_app/start_app/wait/reset/force_reset/rotate_logs/
 rabbitmqctl join_cluster/cluster_status/force_boot/s
 ```
 
+
+
+
+
+### 6. Rabbitmq 配置
+
+- 环境变量
+
+  shell 环境 > **rabbitmq-env.conf 配置文件** > 默认配置
+
+  ```shell
+  # 使用默认用户名启动 rabbitmq
+  [root@$HOSTNAME]# rabbitmq-server -detached
+  # 自定义用户名
+  RABBITMQ_NODENAME=rabbit@node2 rabbitmq-server -detached
+  ```
+
+  
+
+- 配置文件
+
+  CONFIG_FILE=${RABBITMQ_HOME}/etc/rabbitmq/rabbitmq(.config) (修改后需要重启 Broker 才能生效)
+
+  配置加密
+
+  优化网络配置
+
+- 运行时参数和策略
+
+  - vhost 级别的参数 (组件名称，名称，值)
+
+    set_parameter, list_parameters, clear_parameter
+
+  - global 级别的参数 (名称，值)
+
